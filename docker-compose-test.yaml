@@ -1,0 +1,54 @@
+version: '3.7'
+
+services:
+  currency-naming-server:
+    image: microservice/learning-naming-server
+    mem_limit: 1200m
+    ports:
+      - "8761:8761"
+    networks:
+      - currency-network
+      
+  currency-exchange:
+    image: microservice/learning-crrexchange
+    mem_limit: 700m
+    ports:
+      - "8000:8000"
+    networks:
+      - currency-network
+    depends_on:
+      - currency-naming-server  
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://currency-naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://currency-tracing:9411/api/v2/spans    
+  currency-conversion:
+    image: microservice/learning-crrconversion
+    mem_limit: 700m
+    ports:
+      - "8001:8001"
+    networks:
+      - currency-network
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://currency-naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://currency-tracing:9411/api/v2/spans
+  currency-gateway:
+    image: microservice/learning-api-gateway
+    mem_limit: 600m
+    ports:
+      - "8765:8765"
+    networks:
+      - currency-network
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://currency-naming-server:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://currency-tracing:9411/api/v2/spans
+        
+  currency-tracing:
+    image: openzipkin/zipkin
+    mem_limit: 700m
+    ports:
+      - "9411:9411"
+    networks:
+      - currency-network
+      
+networks:
+  currency-network:
